@@ -1,12 +1,14 @@
 import React, { Component } from "react";
 import SimpleStorageContract from "./contracts/SimpleStorage.json";
 import Lottery from "./contracts/Lottery.json";
+
+
 import getWeb3 from "./getWeb3";
 
 import "./App.css";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null, balance: null };
+  state = { storageValue: 0, web3: null, accounts: null, contract: null, tally: null };
 
   componentDidMount = async () => {
     try {
@@ -21,16 +23,14 @@ class App extends Component {
       let deployedNetwork = SimpleStorageContract.networks[networkId];
       const instance = new web3.eth.Contract(
         SimpleStorageContract.abi,
-        
-        // '0x6AA80f9795770FED8D4d2d63055E9Ea13ED0A8b4',
         deployedNetwork && deployedNetwork.address,
       );
-      deployedNetwork = Lottery.networks[networkId];
-      
+      deployedNetwork = Lottery.networks[networkId]
       const lotteryInstance = new web3.eth.Contract(
         Lottery.abi,
         deployedNetwork && deployedNetwork.address
       )
+      
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
@@ -50,7 +50,8 @@ class App extends Component {
     // Stores a given value, 5 by default.
     await contract.methods.set(5).send({ from: accounts[0] });
 
-    const amount = await lotteryContract.methods.getBalance()
+    const score = await lotteryContract.methods.getScore().call();
+
 
     // Get the value from the contract to prove it worked.
     const response = await contract.methods.get().call();
@@ -58,9 +59,23 @@ class App extends Component {
     // Update state with the result.
     this.setState({ 
       storageValue: response,
-      balance: amount 
+      tally: score
     });
   };
+
+  setTheScore = async (e) => {
+    e.preventDefault()
+    let number = e.target.value;
+    let newScore = await Lottery.methods.setScore(number);
+    return newScore;
+  }
+
+  changeScore = (e) => {
+    e.preventDefault()
+    this.setState({
+      tally: e.target.value
+    })
+  }
 
   render() {
     if (!this.state.web3) {
@@ -79,13 +94,13 @@ class App extends Component {
           Try changing the value stored on <strong>line 40</strong> of App.js.
         </p>
         <div>The stored value is: {this.state.storageValue}</div>
-        <div>The new stored value is coming soon</div>
+        <div>The new stored value is {this.state.tally}</div>
         <div>
-          <form onSubmit={console.log(this.state.balance)}>
+          <form onSubmit={() => console.log(this.state.tally)}>
             <fieldset>
-              <label>
+              <label fname='newScore'>
                 Try this:
-                <input />
+                <input type='text' value={this.state.value} onChange={this.changeScore}/>
               </label>
             </fieldset>
             <button type='submit'>Submit</button>
